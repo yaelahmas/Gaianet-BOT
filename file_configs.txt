@@ -1,3 +1,2 @@
-Qwen2-0.5B-Instruct|https://pengu.gaia.domains/v1/chat/completions
-Qwen2-0.5B-Instruct|https://vkvik.gaia.domains/v1/chat/completions
-Qwen2-0.5B-Instruct|https://vitlane.gaia.domains/v1/chat/completions
+model_1|base_url_domain_1
+model_2|base_url_domain_2
