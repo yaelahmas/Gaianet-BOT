@@ -1,3 +1,0 @@
-ip:port
-protocol://ip:port
-protocol://user:pass@ip:port

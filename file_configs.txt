@@ -1,2 +1,0 @@
-model_1|base_url_domain_1
-model_2|base_url_domain_2
