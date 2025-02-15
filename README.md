@@ -11,14 +11,14 @@
 
 | Icon | Message                      | Description                                 |
 | ---- | ---------------------------- | ------------------------------------------- |
+| 🏁   | Starting session #...        | Starting a new session in the chatbot       |
+| 📝   | Question: ...                | Indicator of the question being sent        |
 | 🌍   | Base URL or Domain: ...      | Displays the Base URL or Domain             |
 | 🔑   | API Key: ...                 | Displays the API Key (partially obfuscated) |
 | 💬   | Answer: ...                  | Answer from the AI                          |
 | 🚨   | Error: ...                   | Error or failure in the request             |
-| 📝   | Question: ...                | Indicator of the question being sent        |
 | ⏳   | Next question in ... seconds | Countdown before the next question is sent  |
 | 😞   | Failed to get an answer...   | No answer received after several attempts   |
-| 🏁   | Starting session #...        | Starting a new session in the chatbot       |
 | 🎯   | Session #... finished!       | Summary of the session results              |
 
 ## 🛠 Requirements
@@ -42,7 +42,7 @@
 
 ## ⚙️ Configuration
 
-- **`api_keys.txt`**
+- **`file_api_keys.txt`**
 
   - Fill with your AI API keys in the following format:
     ```bash
@@ -50,7 +50,7 @@
     your_gaia_api_key_2
     ```
 
-- **`questions.txt`** _(List of questions used by the chatbot)_
+- **`file_questions.txt`** _(List of questions used by the chatbot)_
   - Fill with a list of questions in the following format:
     ```bash
     your_questions_1
@@ -70,4 +70,4 @@ python bot.py
 - **SOL:** 6iCzsAb41e1SSPae66nhzP1ocnY9kD2128xmdyrYwjpS
 - **SUI:** 0xd8d6bad559a6494f2e59f96c35264dcbdcf9e1a32d54994bf8bf28fb23b37bea
 
-Terima kasih sudah mengunjungi repository ini! Jangan lupa untuk memberi bintang ⭐ dan follow! Jika ada pertanyaan atau menemukan bug, silakan buat _issue_ di repository ini.
+Thank you for visiting this repository! Don't forget to star ⭐ and follow! If you have any questions or find bugs, please open an _issue_ in this repository.
