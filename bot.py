@@ -36,8 +36,8 @@ def load_questions(file_path):
 
 
 # Memuat data dari file
-API_KEYS = load_api_keys("api_keys.txt")
-QUESTIONS = load_questions("questions.txt")
+API_KEYS = load_api_keys("file_api_keys.txt")
+QUESTIONS = load_questions("file_questions.txt")
 
 # Memastikan ada API Key dan daftar pertanyaan yang dimuat
 if not API_KEYS or not QUESTIONS:
