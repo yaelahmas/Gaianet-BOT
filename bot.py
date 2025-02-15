@@ -1,5 +1,5 @@
-import aiohttp, asyncio, random
-from colorama import init, Fore, Style
+import aiohttp, asyncio, re
+from colorama import init, Fore
 
 init(autoreset=True)
 
@@ -13,98 +13,87 @@ print(f"{Fore.LIGHTWHITE_EX}Github   : https://github.com/yaelahmas")
 print(f"{Fore.LIGHTWHITE_EX}=" * 50)
 
 
-# Fungsi untuk membaca konfigurasi model dan base_url dari file
-def load_configs(file_path):
-    configs = []
-    try:
-        with open(file_path, "r") as file:
-            for line in file:
-                parts = line.strip().split("|")
-                if len(parts) == 2:
-                    configs.append({"model": parts[0], "base_url": parts[1]})
-    except FileNotFoundError:
-        print(f"{Fore.LIGHTRED_EX}🚨 File {Fore.LIGHTWHITE_EX}{file_path} {Fore.LIGHTRED_EX}tidak ditemukan!")
-    return configs
-
-
-# Fungsi untuk membaca API Keys dari file
+# Fungsi untuk memuat API Keys dari file
 def load_api_keys(file_path):
     api_keys = []
     try:
         with open(file_path, "r") as file:
             api_keys = [line.strip() for line in file if line.strip()]
     except FileNotFoundError:
-        print(f"{Fore.LIGHTRED_EX}🚨 File {Fore.LIGHTWHITE_EX}{file_path} {Fore.LIGHTRED_EX}tidak ditemukan!")
+        print(f"{Fore.LIGHTRED_EX}🚨 File {Fore.LIGHTWHITE_EX}{file_path} {Fore.LIGHTRED_EX}not found!")
     return api_keys
 
 
-# Fungsi untuk pertanyaan dari file
+# Fungsi untuk memuat pertanyaan dari file
 def load_questions(file_path):
     questions = []
     try:
         with open(file_path, "r") as file:
             questions = [line.strip() for line in file if line.strip()]
     except FileNotFoundError:
-        print(f"{Fore.LIGHTRED_EX}🚨 File {Fore.LIGHTWHITE_EX}{file_path} {Fore.LIGHTRED_EX}tidak ditemukan!")
+        print(f"{Fore.LIGHTRED_EX}🚨 File {Fore.LIGHTWHITE_EX}{file_path} {Fore.LIGHTRED_EX}not found!")
     return questions
 
 
 # Memuat data dari file
-CONFIGS = load_configs("file_configs.txt")
-API_KEYS = load_api_keys("file_api_keys.txt")
-QUESTIONS = load_questions("file_questions.txt")
+API_KEYS = load_api_keys("api_keys.txt")
+QUESTIONS = load_questions("questions.txt")
 
-
-# Memastikan ada konfigurasi yang dimuat
-if not CONFIGS or not API_KEYS or not QUESTIONS:
-    print(f"{Fore.LIGHTRED_EX}🚨 Konfigurasi dan API Key serta Daftar pertanyaan tidak ditemukan. Program dihentikan!")
+# Memastikan ada API Key dan daftar pertanyaan yang dimuat
+if not API_KEYS or not QUESTIONS:
+    print(f"{Fore.LIGHTRED_EX}🚨 API Key and Question list not found. Program is stopping!")
     exit()
 
+# Fungsi untuk validasi domain dengan format yang benar
+def validate_domain(domain):
+    pattern = r"^https:\/\/[a-zA-Z0-9\-]+\.(gaia\.domains)$"
+    return bool(re.match(pattern, domain))
 
-# Meminta pengguna apakah ingin menggunakan proxy
-use_proxy = input(f"{Fore.LIGHTCYAN_EX}Apakah ingin menggunakan proxy? (ya/tidak): {Fore.LIGHTWHITE_EX}").strip().lower() == "ya"
+# Fungsi untuk mendapatkan input Domain
+def get_domain_input(prompt):
+    try:
+        return input(prompt).strip()
+    except KeyboardInterrupt:
+        print(f"\n{Fore.LIGHTRED_EX}🛑 Program interrupted by the user.")
+        exit()
+
+# Meminta input domain dari pengguna
+while True:
+    domain_input = get_domain_input(f"{Fore.LIGHTMAGENTA_EX}📝 Please input your domain: {Fore.LIGHTWHITE_EX}")
+
+    # Memeriksa apakah domain valid
+    if validate_domain(domain_input):
+        URLS = [domain_input]
+        break  # Keluar dari loop jika domain valid
+    else:
+        print(f"{Fore.LIGHTRED_EX}🚨 Invalid domain entered. Please try again.")
+        continue  # Meminta input ulang
+
+# Memastikan input domain tidak kosong
+if not domain_input:
+    print(f"{Fore.LIGHTRED_EX}🚨 No domain entered. Program is stopping!")
+    exit()
+
+# Menampilkan domain dan ID yang dipilih oleh pengguna
+print(f"{Fore.LIGHTCYAN_EX}🌍 Selected Domain: {Fore.LIGHTWHITE_EX}{URLS[0]}")
 print(f"{Fore.LIGHTWHITE_EX}=" * 50)
 
-
-# Membaca daftar proxy dari file jika pengguna memilih menggunakan proxy
-PROXIES = []
-if use_proxy:
-    try:
-        with open("file_proxies.txt", "r") as file:
-            PROXIES = [line.strip() for line in file if line.strip()]
-        print(f"{Fore.LIGHTBLUE_EX}🛡️  Program berjalan dengan {Fore.LIGHTWHITE_EX}{len(PROXIES)} {Fore.LIGHTBLUE_EX}proxy.")
-    except FileNotFoundError:
-        print(f"{Fore.LIGHTRED_EX}🚨 File proxies.txt tidak ditemukan. Berjalan tanpa proxy.")
-        use_proxy = False
-else:
-    print(f"{Fore.LIGHTBLUE_EX}🌐 Program berjalan tanpa proxy.")
-
-
 class ChatBot:
-    def __init__(self, configs, proxies):
-        self.configs = configs
-        self.proxies = proxies
-        self.config_index = 0
+    def __init__(self):
         self.api_key_index = 0
-        self.proxy_index = 0  # Tambahkan variabel ini agar bisa merotasi proxy
-        
-    def get_next(self):
-        """Mengambil model, URL, dan API key berikutnya secara bergantian"""
-        config = self.configs[self.config_index]
+
+    def get_next_api_key(self):
+        """Mengambil API key berikutnya secara bergantian"""
         api_key = API_KEYS[self.api_key_index]
-
-        # Update indeks untuk model, URL, dan API key agar bergantian
-        self.config_index = (self.config_index + 1) % len(self.configs)
         self.api_key_index = (self.api_key_index + 1) % len(API_KEYS)
-
-        return config['model'], config['base_url'], api_key
-
+        return api_key
+    
     async def send_question(self, question: str, max_retries=5):
-        """Mengirim pertanyaan ke AI dengan retry terbatas & rotasi proxy"""
+        """Mengirim pertanyaan ke AI dengan retry terbatas"""
         retries = 0
         while retries < max_retries:  
-            model, base_url, api_key = self.get_next()
-            proxy = self.proxies[self.proxy_index] if use_proxy and self.proxies else None
+            api_key = self.get_next_api_key()
+            base_url = URLS[0]  # Gunakan URL yang dimasukkan oleh pengguna
             
             data = {
                 "messages": [
@@ -112,10 +101,6 @@ class ChatBot:
                     {"role": "user", "content": question}
                 ]
             }
-            
-            if model:  # Hanya tambahkan model jika ada
-                data["model"] = model
-                data["temperature"] = 0.3
 
             headers = {
                 "Content-Type": "application/json",
@@ -124,76 +109,79 @@ class ChatBot:
             
             async with aiohttp.ClientSession() as session:
                 try:
-                    async with session.post(base_url, headers=headers, json=data, proxy=proxy, timeout=60) as response:
+                    async with session.post(f"{base_url}/v1/chat/completions", headers=headers, json=data, timeout=120) as response:
                         response.raise_for_status()
                         result = await response.json()
                         answer = result["choices"][0]["message"]["content"]
                         
-                        print(f"{Fore.LIGHTCYAN_EX}🌍 Base URL: {Fore.LIGHTWHITE_EX}{base_url}")
-                        print(f"{Fore.LIGHTMAGENTA_EX}🔬 Model: {Fore.LIGHTWHITE_EX}{model}")
-                        print(f"{Fore.LIGHTYELLOW_EX}🔑 API Key: {Fore.LIGHTWHITE_EX}{api_key[:10]}*****")  # Masking API Key
-                        if proxy:
-                            print(f"{Fore.LIGHTBLUE_EX}🛡️  Proxy: {Fore.LIGHTWHITE_EX}{proxy[:15]}*****")  # Masking Proxy
-                        print(f"{Fore.LIGHTGREEN_EX}💬 Jawaban: {Fore.LIGHTWHITE_EX}{answer}")
+                        print(f"{Fore.LIGHTCYAN_EX}🌍 Base URL : {Fore.LIGHTWHITE_EX}{base_url}")
+                        print(f"{Fore.LIGHTYELLOW_EX}🔑 API Key  : {Fore.LIGHTWHITE_EX}{api_key[:10]}*****")  # Masking API Key
+                        print(f"{Fore.LIGHTGREEN_EX}💬 Answer   : {Fore.LIGHTWHITE_EX}{answer}")
                         print(f"{Fore.LIGHTWHITE_EX}=" * 50)
                         
                         return answer
                 except Exception as e:
                     retries += 1
                     error_message = str(e).strip()
-                    if not error_message:  # Jika error kosong
-                        error_message = "Gagal mendapatkan respons."
-                    print(f"{Fore.LIGHTRED_EX}🚨 Kesalahan: {Fore.LIGHTWHITE_EX}{error_message} - {Fore.LIGHTYELLOW_EX}(Percobaan {retries}/{max_retries})")
-                    if use_proxy and self.proxies:
-                        self.proxy_index = (self.proxy_index + 1) % len(self.proxies)  # Ganti proxy
-                        print(f"{Fore.LIGHTCYAN_EX}🛡️  Mencoba dengan proxy baru:{Fore.LIGHTWHITE_EX}{self.proxies[self.proxy_index][:15]}*****")
-                    await asyncio.sleep(5)
+                    if not error_message:  # Jika error message kosong
+                        error_message = "Failed to get response."
+                    print(f"{Fore.LIGHTRED_EX}🚨 Error    : {Fore.LIGHTWHITE_EX}{error_message} - {Fore.LIGHTYELLOW_EX}(Attempt {retries}/{max_retries})")
+                    await countdown_wait(5)
         
-        return None  # Jika tetap gagal, kembalikan None
-   
-        
-async def countdown(seconds):
+        return None  # Jika masih gagal, kembalikan None
+
+async def countdown_next_questions(seconds):
+    """Fungsi untuk menampilkan countdown menuju pertanyaan berikutnya"""
     for i in range(seconds, -1, -1):
-        print(f"{Fore.LIGHTYELLOW_EX}⏳ Pertanyaan berikutnya dalam {Fore.LIGHTWHITE_EX}{i} {Fore.LIGHTYELLOW_EX}detik...", end="\r")
+        print(f"{Fore.LIGHTYELLOW_EX}⏳ Please wait for the next question in {Fore.LIGHTWHITE_EX}{i} {Fore.LIGHTYELLOW_EX}seconds...", end="\r")
         await asyncio.sleep(1)
-    print(f"{Fore.LIGHTBLUE_EX}\r\033[K📝 Pertanyaan berikutnya\n", end="", flush=True)  # Hapus baris setelah countdown selesai
+    print(f"{Fore.LIGHTBLUE_EX}\r\033[K", end="", flush=True)  # Bersihkan baris setelah countdown selesai
+    
+async def countdown_wait(seconds):
+    """Fungsi untuk menampilkan countdown sebelum melanjutkan"""
+    for i in range(seconds, -1, -1):
+        print(f"{Fore.LIGHTYELLOW_EX}⏳ Please wait for {Fore.LIGHTWHITE_EX}{i} {Fore.LIGHTYELLOW_EX}seconds...", end="\r")
+        await asyncio.sleep(1)
+    print(f"{Fore.LIGHTBLUE_EX}\r\033[K", end="", flush=True)  # Bersihkan baris setelah countdown selesai
 
 
 async def main():
-    bot = ChatBot(CONFIGS, PROXIES)
+    bot = ChatBot()
     cycle = 0
 
     while True:
         cycle += 1
         answered = 0
         failed = 0
-        random.shuffle(QUESTIONS)
+        # random.shuffle(QUESTIONS) # Bisa diaktifkan jika ingin acak pertanyaan
         total_questions = len(QUESTIONS)
         
-        print(f"{Fore.LIGHTGREEN_EX}🏁 Memulai sesi ke-{Fore.LIGHTWHITE_EX}{cycle} {Fore.LIGHTGREEN_EX}dari pertanyaan...")
+        print(f"{Fore.LIGHTGREEN_EX}🏁 Starting session {Fore.LIGHTWHITE_EX}{cycle} {Fore.LIGHTGREEN_EX}for {Fore.LIGHTWHITE_EX}{total_questions} {Fore.LIGHTGREEN_EX}{'question' if total_questions == 1 else 'questions'}")
+        print(f"{Fore.LIGHTWHITE_EX}=" * 50)
 
         for index, question in enumerate(QUESTIONS, start=1):
-            print(f"{Fore.LIGHTWHITE_EX}=" * 50)
-            print(f"{Fore.LIGHTBLUE_EX}📝 Pertanyaan {Fore.LIGHTYELLOW_EX}({index}/{total_questions}): {Fore.LIGHTWHITE_EX}{question}")
-            print(f"{Fore.LIGHTWHITE_EX}=" * 50)
+            print(f"{Fore.LIGHTBLUE_EX}📝 Question : {Fore.LIGHTWHITE_EX}{question}")
 
             response = await bot.send_question(question)
 
             if response:
                 answered += 1
             else:
-                print(f"{Fore.LIGHTYELLOW_EX}😞 Gagal mendapatkan jawaban setelah beberapa percobaan. Maaf ya...")
+                print(f"{Fore.LIGHTYELLOW_EX}😞 Failed to get an answer after several attempts. Sorry...")
                 print(f"{Fore.LIGHTWHITE_EX}=" * 50)
                 failed += 1
             
             if index < total_questions:
-                await countdown(15)
+                await countdown_next_questions(10)  # Tunggu sebelum pertanyaan berikutnya
         
-        print(f"{Fore.LIGHTGREEN_EX}🎯 Sesi ke-{Fore.LIGHTWHITE_EX}{cycle} {Fore.LIGHTGREEN_EX}selesai! Berhasil terjawab: {Fore.LIGHTWHITE_EX}{answered}, {Fore.LIGHTRED_EX}Tidak terjawab: {Fore.LIGHTWHITE_EX}{failed}.")
-        await asyncio.sleep(5)
+        print(f"{Fore.LIGHTBLUE_EX}🎯 Session {Fore.LIGHTWHITE_EX}{cycle} {Fore.LIGHTBLUE_EX}completed!")
+        print(f"{Fore.LIGHTGREEN_EX}✅ Successfully answered: {Fore.LIGHTWHITE_EX}{answered}")
+        print(f"{Fore.LIGHTRED_EX}❌ Not answered: {Fore.LIGHTWHITE_EX}{failed}")
+        print(f"{Fore.LIGHTWHITE_EX}=" * 50)
+        await countdown_wait(5)  # Tunggu sebelum melanjutkan ke sesi berikutnya
 
 
 try:
     asyncio.run(main())
 except KeyboardInterrupt:
-    print(f"{Fore.LIGHTRED_EX}🛑 Program dihentikan oleh pengguna.")
+    print(f"{Fore.LIGHTRED_EX}🛑 Program interrupted by the user.")
