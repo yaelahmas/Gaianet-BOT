@@ -46,7 +46,7 @@ if not API_KEYS or not QUESTIONS:
 
 # Fungsi untuk validasi domain dengan format yang benar
 def validate_domain(domain):
-    pattern = r"^https:\/\/[a-zA-Z0-9\-]+\.(gaia\.domains)$"
+    pattern = r"^[a-zA-Z0-9\-\.]+\.gaia\.domains$"
     return bool(re.match(pattern, domain))
 
 # Fungsi untuk mendapatkan input Domain
@@ -109,7 +109,7 @@ class ChatBot:
             
             async with aiohttp.ClientSession() as session:
                 try:
-                    async with session.post(f"{base_url}/v1/chat/completions", headers=headers, json=data, timeout=120) as response:
+                    async with session.post(f"https://{base_url}/v1/chat/completions", headers=headers, json=data, timeout=120) as response:
                         response.raise_for_status()
                         result = await response.json()
                         answer = result["choices"][0]["message"]["content"]
