@@ -59,6 +59,7 @@ def get_domain_input(prompt):
 
 # Meminta input domain dari pengguna
 while True:
+    print(f"{Fore.LIGHTCYAN_EX}📌 For example: {Fore.LIGHTWHITE_EX}llama.gaia.domains")
     domain_input = get_domain_input(f"{Fore.LIGHTMAGENTA_EX}📝 Please input your domain: {Fore.LIGHTWHITE_EX}")
 
     # Memeriksa apakah domain valid
